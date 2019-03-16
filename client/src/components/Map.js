@@ -1,12 +1,72 @@
-import React from "react";
-import { withStyles } from "@material-ui/core/styles";
+import React, { useState, useEffect, useContext } from "react"
+import ReactMapGL, { NavigationControl, Marker } from "react-map-gl"
+import { withStyles } from "@material-ui/core/styles"
 // import Button from "@material-ui/core/Button";
 // import Typography from "@material-ui/core/Typography";
 // import DeleteIcon from "@material-ui/icons/DeleteTwoTone";
 
+import PinIcon from "./PinIcon"
+import Context from "../context"
+
+const INITIAL_VIEWPORT = {
+  latitude: 37.7577,
+  longitude: -122.4376,
+  zoom: 13
+}
+
 const Map = ({ classes }) => {
-  return <div>Map</div>;
-};
+  const { state, dispatch } = useContext(Context)
+  const [viewport, setViewport] = useState(INITIAL_VIEWPORT)
+  const [userPosition, setUserPosition] = useState(null)
+  useEffect(() => {
+    getUserPosition()
+  }, [])
+
+  const getUserPosition = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(position => {
+        const { latitude, longitude } = position.coords
+        setViewport({ ...viewport, latitude, longitude })
+        setUserPosition({ latitude, longitude })
+      })
+    }
+  }
+
+  const handleMapClick = ({ lngLat, leftButton }) => {
+    if (!leftButton) return
+    if (!state.draft) {
+      dispatch({ type: "" })
+    }
+  }
+
+  return (
+    <div className={classes.root}>
+      <ReactMapGL
+        width="100vw"
+        height="calc(100vh - 64px)"
+        mapStyle="mapbox://styles/mapbox/streets-v9"
+        mapboxApiAccessToken="pk.eyJ1IjoiemFjaGluY29vbCIsImEiOiJjanRjMDJ6YnIwcmR6M3lzMHhjaXpzaXVnIn0.m-mVoKPzj8HmVu0Mwk3Clw"
+        onViewportChange={viewport => setViewport(viewport)}
+        onClick={handleMapClick}
+        {...viewport}
+      >
+        <div className={classes.navigationControl}>
+          <NavigationControl onViewportChange={viewport => setViewport(viewport)} />
+        </div>
+        {userPosition && (
+          <Marker
+            latitude={userPosition.latitude}
+            longitude={userPosition.longitude}
+            offsetLeft={-19}
+            offsetTop={-37}
+          >
+            <PinIcon size={40} color="red" />
+          </Marker>
+        )}
+      </ReactMapGL>
+    </div>
+  )
+}
 
 const styles = {
   root: {
@@ -37,6 +97,6 @@ const styles = {
     justifyContent: "center",
     flexDirection: "column"
   }
-};
+}
 
-export default withStyles(styles)(Map);
+export default withStyles(styles)(Map)

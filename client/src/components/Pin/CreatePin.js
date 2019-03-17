@@ -1,16 +1,95 @@
-import React from "react";
-import { withStyles } from "@material-ui/core/styles";
-// import TextField from "@material-ui/core/TextField";
-// import Typography from "@material-ui/core/Typography";
-// import Button from "@material-ui/core/Button";
-// import AddAPhotoIcon from "@material-ui/icons/AddAPhotoTwoTone";
-// import LandscapeIcon from "@material-ui/icons/LandscapeOutlined";
-// import ClearIcon from "@material-ui/icons/Clear";
-// import SaveIcon from "@material-ui/icons/SaveTwoTone";
+import React, { useState, useContext } from "react"
+import { withStyles } from "@material-ui/core/styles"
+import TextField from "@material-ui/core/TextField"
+import Typography from "@material-ui/core/Typography"
+import Button from "@material-ui/core/Button"
+import LandscapeIcon from "@material-ui/icons/LandscapeOutlined"
+import ClearIcon from "@material-ui/icons/Clear"
+import SaveIcon from "@material-ui/icons/SaveTwoTone"
+
+import Context from "../../context"
+import { useClient } from "../../client"
+import { CREATE_PIN_MUTATION } from "../../graphql/mutations"
 
 const CreatePin = ({ classes }) => {
-  return <div>CreatePin</div>;
-};
+  const client = useClient()
+  const { state, dispatch } = useContext(Context)
+  const [title, setTitle] = useState("")
+  const [content, setContent] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleDeleteDraft = () => {
+    setTitle("")
+    setContent("")
+    dispatch({ type: "DELETE_DRAFT" })
+  }
+
+  const handleSubmit = async e => {
+    try {
+      e.preventDefault()
+
+      setSubmitting(true)
+
+      const { latitude, longitude } = state.draft
+      const variables = { title, content, latitude, longitude }
+
+      const { createPin } = await client.request(CREATE_PIN_MUTATION, variables)
+
+      console.log(`Pin created`, createPin)
+
+      handleDeleteDraft()
+    } catch (err) {
+      setSubmitting(false)
+      console.log(`Error creating pin: ${err}`)
+    }
+  }
+
+  return (
+    <form className={classes.form}>
+      <Typography className={classes.alignCenter} component="h2" variant="h4" color="secondary">
+        <LandscapeIcon className={classes.iconLarge} />
+        Pin Location
+      </Typography>
+      <div>
+        <TextField
+          onChange={e => setTitle(e.target.value)}
+          name="title"
+          label="title"
+          placeholder="Insert blog title"
+        />
+      </div>
+      <div className={classes.contentField}>
+        <TextField
+          name="content"
+          label="Content"
+          multiline
+          rows="6"
+          margin="normal"
+          fullWidth
+          variant="outlined"
+          onChange={e => setContent(e.target.value)}
+        />
+      </div>
+      <div>
+        <Button onClick={handleDeleteDraft} className={classes.button} variant="contained" color="primary">
+          <ClearIcon className={classes.leftIcon} />
+          Discard
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          disabled={!title.trim() || !content.trim() || submitting}
+          type="submit"
+          className={classes.button}
+          variant="contained"
+          color="secondary"
+        >
+          Submit
+          <SaveIcon className={classes.rightIcon} />
+        </Button>
+      </div>
+    </form>
+  )
+}
 
 const styles = theme => ({
   form: {
@@ -50,6 +129,6 @@ const styles = theme => ({
     marginRight: theme.spacing.unit,
     marginLeft: 0
   }
-});
+})
 
-export default withStyles(styles)(CreatePin);
+export default withStyles(styles)(CreatePin)

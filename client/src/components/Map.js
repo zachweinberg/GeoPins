@@ -5,7 +5,10 @@ import { withStyles } from "@material-ui/core/styles"
 // import Typography from "@material-ui/core/Typography";
 // import DeleteIcon from "@material-ui/icons/DeleteTwoTone";
 
+import { useClient } from "../client"
+import { GET_PINS_QUERY } from "../graphql/queries"
 import PinIcon from "./PinIcon"
+import Blog from "./Blog"
 import Context from "../context"
 
 const INITIAL_VIEWPORT = {
@@ -21,6 +24,9 @@ const Map = ({ classes }) => {
   useEffect(() => {
     getUserPosition()
   }, [])
+  useEffect(() => {
+    getPins()
+  })
 
   const getUserPosition = () => {
     if ("geolocation" in navigator) {
@@ -32,11 +38,17 @@ const Map = ({ classes }) => {
     }
   }
 
+  const getPins = async () => {
+    const { getPins } = await clientInformation.request(GET_PINS_QUERY)
+  }
+
   const handleMapClick = ({ lngLat, leftButton }) => {
     if (!leftButton) return
     if (!state.draft) {
-      dispatch({ type: "" })
+      dispatch({ type: "CREATE_DRAFT" })
     }
+    const [longitude, latitude] = lngLat
+    dispatch({ type: "UPDATE_DRAFT_LOCATION", payload: { longitude, latitude } })
   }
 
   return (
@@ -63,7 +75,18 @@ const Map = ({ classes }) => {
             <PinIcon size={40} color="red" />
           </Marker>
         )}
+        {state.draft && (
+          <Marker
+            latitude={state.draft.latitude}
+            longitude={state.draft.longitude}
+            offsetLeft={-19}
+            offsetTop={-37}
+          >
+            <PinIcon size={40} color="hotpink" />
+          </Marker>
+        )}
       </ReactMapGL>
+      <Blog />
     </div>
   )
 }
